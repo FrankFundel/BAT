@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import h5py
 
-df = pd.read_csv('E:/Chiroptera/Chiroptera.csv')
+df = pd.read_csv('../data.csv')
 
 classes = {
   "Rhinolophus ferrumequinum": [],
@@ -80,6 +80,7 @@ import os.path
 from keras.utils.np_utils import to_categorical
 from scipy import signal
 import cv2
+from tqdm import tqdm
 
 hop_length = 512
 sample_rate = 22050
@@ -89,8 +90,8 @@ frequency_bins = int(1025 / 10)
 window_size = int(frame_rate / 2) # 500ms
 overlap = int(window_size / 2) # 250ms
 
-sequence_length = 30 # = 7.5 seconds (with overlap)
-sequence_overlap = int(sequence_length / 2)
+sequence_length = 15  # = 3.35 seconds (with overlap)
+sequence_overlap = int(sequence_length / 5)
 
 # results in shape X: (n, 11, 21, 102), Y: (n, 11)
 
@@ -105,7 +106,7 @@ Y_test = []
 X_val = []
 Y_val = []
 
-b, a = signal.butter(10, 15000, 'highpass', analog=True)
+b, a = signal.butter(10, 15000 / 120000, 'highpass')
 
 def denoise(x):
   return np.abs(x - x.mean())
@@ -120,44 +121,47 @@ def slideWindow(a, size, step):
     i+=1
   return b
 
-def prepare(y):
-    y, sr = librosa.load("E:/Chiroptera/Data/" + filename + '.wav')
+def prepare(filename):
+    y, _ = librosa.load("../Chiroptera/" + filename + '.wav', sample_rate)
     filtered = signal.lfilter(b, a, y)
     D = librosa.stft(filtered, hop_length=hop_length)
     S_db = librosa.amplitude_to_db(np.abs(D), ref=np.max)  #spectrogram
     S_db = np.apply_along_axis(denoise, axis=1, arr=S_db)
     new_size = (frequency_bins, len(S_db[0]))
     spectrogram = cv2.resize(S_db.transpose(), dsize=new_size, interpolation=cv2.INTER_NEAREST)
-    tiles = slideWindow(spectrogram, size=window_size, step=overlap)[:-1]
-    sequences = slideWindow(denoised_tiles, size=sequence_length, step=sequence_overlap)[:-1]
-    return sequences
+    #tiles = slideWindow(spectrogram, size=window_size, step=overlap)[:-1]
+    #sequences = slideWindow(tiles, size=sequence_length, step=sequence_overlap)[:-1]
+    return spectrogram
 
 def mergeClass(name):
   files = []
-  for filename in classes[name]:
+  for filename in tqdm(classes[name]):
     files.append(prepare(filename))
   
-  label = to_categorical(labels[species], num_classes=len(labels)) # one hot
+  label = to_categorical(labels[name], num_classes=len(labels)) # one hot
   
-  if len(sequences) >= 7:
+  if len(files) >= 7:
     x_train, x_test, _, _ = train_test_split(files, np.zeros(len(files)), test_size=0.25, random_state=42)
     x_train, x_val, _, _ = train_test_split(x_train, np.zeros(len(x_train)), test_size=0.2, random_state=42)
     
+    #x_train_c = np.concatenate(x_train)
+    #x_test_c = np.concatenate(x_test)
+    #x_val_c = np.concatenate(x_val)
+
     X_train.extend(x_train)
     Y_train.extend([label] * len(x_train))
     X_test.extend(x_test)
     Y_test.extend([label] * len(x_test))
     X_val.extend(x_val)
     Y_val.extend([label] * len(x_val))
-  else:
-    print("no sequences for " + name)
 
-for classname in list(classes):
+for classname in tqdm(list(classes)):
   mergeClass(classname)
-  print(classname + " merged!")
 
-
-hf.create_dataset('train', data=[X_train, Y_train])
-hf.create_dataset('test', data=[X_test, Y_test])
-hf.create_dataset('val', data=[X_val, Y_val])
+hf.create_dataset('X_train', data=X_train)
+hf.create_dataset('Y_train', data=Y_train)
+hf.create_dataset('X_test', data=X_test)
+hf.create_dataset('Y_test', data=Y_test)
+hf.create_dataset('X_val', data=X_val)
+hf.create_dataset('Y_val', data=Y_val)
 hf.close()

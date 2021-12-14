@@ -3,3 +3,5 @@
 /train
 /val
 /results
+/Chiroptera
+*.h5
