@@ -54,11 +54,9 @@ system = {
 '''Pettersson D980 Time expansion. copy to Sony WM D6C'''
 '''Sample Rate: 96000, Bit depth: 24'''
 
-
-folder = "E:\Chiroptera"
 data = []
 
-with open(folder + '\Chiroptera.csv', newline='') as csvfile:
+with open('..\data.csv', newline='') as csvfile:
   reader = csv.reader(csvfile, delimiter=',')
 
   header = next(reader)
