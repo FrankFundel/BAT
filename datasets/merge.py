@@ -49,9 +49,12 @@ for index, row in df.iterrows():
 
 print("sorted!")
 
-hop_length = 512
+sample_rate = 22050          # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz), 22050 Hz = 44100 Hz TE
+n_fft = 512                  # 10 ms = 100 ms TE * sample_rate (e.g. 23 ms * 22050 Hz ~ 512)
+# Smaller values improve the temporal resolution of the STFT at the expense of frequency resolution
 
-b, a = signal.butter(10, 15000 / 120000, 'highpass')       # 1th order butterworth high-pass filter with cut-off frequency of 15,000 kHz
+# 1th order butterworth high-pass filter with cut-off frequency of 15,000 kHz
+b, a = signal.butter(10, 15000 / 120000, 'highpass')
 
 def denoise(x):
   return np.abs(x - x.mean())
@@ -59,9 +62,9 @@ def denoise(x):
 def mergeClass(name):
   signals = []
   for filename in tqdm(classes[name]):
-    y, _ = librosa.load("../data/" + filename + '.wav')
+    y, _ = librosa.load("../data/" + filename + '.wav', sr=sample_rate)
     filtered = signal.lfilter(b, a, y)                      # filter
-    D = librosa.stft(filtered, hop_length=hop_length)
+    D = librosa.stft(filtered, n_fft=n_fft)                 # shape=(1 + n_fft/2, n_frames)=(257, n_frames)
     S_db = librosa.amplitude_to_db(np.abs(D), ref=np.max)   # spectrogram
     S_db = np.apply_along_axis(denoise, axis=1, arr=S_db)   # denoise
     signals.append(np.transpose(S_db))
