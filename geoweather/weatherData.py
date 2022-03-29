@@ -18,4 +18,6 @@ def getWeatherData(latitude, longitude, datetime):
     }
   return out
   
-# print(getWeatherData(52.36, 13.67, datetime.fromtimestamp(932754827))) # Ziegenhals (bei Wernsdorf), Fri Jul 23 1999 20:27:22
+# test
+# print(getWeatherData(52.36, 13.67, datetime.fromtimestamp(932754827)))
+# # Ziegenhals (bei Wernsdorf), Fri Jul 23 1999 20:27:22

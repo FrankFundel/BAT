@@ -57,6 +57,7 @@ system = {
 data = []
 
 with open('..\data.csv', newline='') as csvfile:
+  print("test")
   reader = csv.reader(csvfile, delimiter=',')
 
   header = next(reader)

@@ -64,4 +64,5 @@ def getGeoTags(latitude, longitude):
 
   return out
 
+# test
 # print(getGeoTags(52.36, 13.67))
