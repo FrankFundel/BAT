@@ -50,7 +50,7 @@ for index, row in df.iterrows():
 print("sorted!")
 
 sample_rate = 22050          # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz), 22050 Hz = 44100 Hz TE
-n_fft = 512                  # 10 ms = 100 ms TE * sample_rate (e.g. 23 ms * 22050 Hz ~ 512)
+n_fft = 1028                 # 10 ms = 100 ms TE * sample_rate (e.g. 23 ms * 22050 Hz ~ 512)
 # Smaller values improve the temporal resolution of the STFT at the expense of frequency resolution
 
 # 1th order butterworth high-pass filter with cut-off frequency of 15,000 kHz

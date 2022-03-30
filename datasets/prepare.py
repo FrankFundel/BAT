@@ -51,19 +51,18 @@ classes23 = {
 
 labels = classes13
 
-merged_hf = h5py.File('merged-1025.h5', 'r')
+merged_hf = h5py.File('merged.h5', 'r')
 
 mode = sys.argv[1]
 
 sample_rate = 22050                         # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz), 22050 Hz = 44100 Hz TE
-n_fft = 512                                 # 10 ms = 100 ms TE * sample_rate (e.g. 23 ms * 22050 Hz ~ 512)
-hop_length = 512
-frame_rate = sample_rate / hop_length
+n_fft = 2048                                # 10 ms = 100 ms TE * sample_rate (e.g. 23 ms * 22050 Hz ~ 512)
+frame_rate = sample_rate / n_fft
 
 window_size = int(frame_rate / 2)           # /2 = 500ms ~ 50ms
 overlap = int(window_size / 2)              # /2 = 250ms ~ 25ms
 sequence_length = 8                         # 15 = 3.35 seconds, 30 = 7.5 seconds (with overlap)
-sequence_overlap = int(sequence_length / 4)
+sequence_overlap = int(sequence_length / 2)
 
 def slideWindow(a, size, step):
   b = []
@@ -87,6 +86,7 @@ def getIndividuals():
 if (mode == 's'):
   seq_hf = h5py.File('sequences_s.h5', 'a')
   #ind_hf = h5py.File('individuals_s.h5', 'a')
+  print("Preparing spectrogram dataset.")
 
   for set in ["train", "test", "val"]:
     merged_set = merged_hf.require_group(set)
@@ -94,6 +94,7 @@ if (mode == 's'):
     Y_seq = []
     #X_ind = []
     #Y_ind = []
+    print("Preparing " + set + " dataset.")
 
     for species in tqdm(list(labels)):
       S_db = merged_set.get(species)
@@ -106,7 +107,9 @@ if (mode == 's'):
       #X_ind.extend(ind)
       #Y_ind.extend([label] * len(ind))
 
+    print("Shuffling...")
     X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
+    print("Writing...")
     seq_hf.create_dataset('X_' + set, data=X_seq)
     seq_hf.create_dataset('Y_' + set, data=Y_seq)
     #X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
