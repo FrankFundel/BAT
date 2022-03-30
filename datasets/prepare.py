@@ -1,129 +1,89 @@
-import h5py
-from tqdm import tqdm
+import pandas as pd
+from sklearn.model_selection import train_test_split
 import librosa
 import numpy as np
-from keras.utils.np_utils import to_categorical
-from sklearn.utils import shuffle
-import cv2
+from scipy import signal
+from tqdm import tqdm
+import h5py
 
-classes13 = {
-  "Pipistrellus pipistrellus": 0,
-  "Pipistrellus nathusii": 1,
-  "Pipistrellus kuhlii": 2,
-  "Myotis daubentonii": 3,
-  "Nyctalus noctula": 4,
-  "Nyctalus leisleri": 5,
-  "Eptesicus serotinus": 6,
-  "Myotis dasycneme": 7,
-  "Miniopterus schreibersii": 8,
-  "Vespertilio murinus": 9,
-  "Rhinolophus ferrumequinum": 10,
-  "Myotis emarginatus": 11,
-  "Myotis myotis": 12,
+df = pd.read_csv('../data.csv')
+hf = h5py.File('prepared.h5', 'a')  # will be ~13GB
+train_set = hf.require_group("train")
+test_set = hf.require_group("test")
+val_set = hf.require_group("val")
+
+classes = {
+  "Rhinolophus ferrumequinum": [],
+  "Rhinolophus hipposideros": [],
+  "Myotis daubentonii": [],
+  "Myotis brandtii": [],
+  "Myotis mystacinus": [],
+  "Myotis emarginatus": [],
+  "Myotis nattereri": [],
+  "Myotis bechsteinii": [],
+  "Myotis myotis": [],
+  "Nyctalus noctula": [],
+  "Nyctalus leisleri": [],
+  "Nyctalus lasiopterus": [],
+  "Pipistrellus pipistrellus": [],
+  "Pipistrellus pygmaeus": [],
+  "Pipistrellus nathusii": [],
+  "Pipistrellus kuhlii": [],
+  "Hypsugo savii": [],
+  "Vespertilio murinus": [],
+  "Eptesicus serotinus": [],
+  "Eptesicus nilssonii": [],
+  "Plecotus auritus": [],
+  "Plecotus austriacus": [],
+  "Barbastella barbastellus": [],
+  "Tadarida teniotis": [],
+  "Miniopterus schreibersii": [],
+  "Myotis capaccinii": [],
+  "Myotis dasycneme": [],
+  "Pipistrellus maderensis": [],
+  "Rhinolophus blasii": []
 }
 
-classes23 = {
-  "Pipistrellus pipistrellus": 0,
-  "Pipistrellus nathusii": 1,
-  "Pipistrellus kuhlii": 2,
-  "Myotis daubentonii": 3,
-  "Nyctalus noctula": 4,
-  "Nyctalus leisleri": 5,
-  "Myotis nattereri": 6,
-  "Eptesicus serotinus": 7,
-  "Myotis dasycneme": 8,
-  "Miniopterus schreibersii": 9,
-  "Vespertilio murinus": 10,
-  "Rhinolophus ferrumequinum": 11,
-  "Rhinolophus hipposideros": 12,
-  "Myotis brandtii": 13,
-  "Myotis mystacinus": 14,
-  "Myotis emarginatus": 15,
-  "Myotis myotis": 16,
-  "Pipistrellus pygmaeus": 17,
-  "Hypsugo savii": 18,
-  "Eptesicus nilssonii": 19,
-  "Tadarida teniotis": 20,
-  "Myotis capaccinii": 21,
-  "Pipistrellus maderensis": 22,
-  "Rhinolophus blasii": 23
-}
+for index, row in df.iterrows():
+  classes[row["species"]].append(row["filename"])
 
-labels = classes13
+print("sorted!")
 
-merged_hf = h5py.File('merged.h5', 'r')
+sample_rate = 22050          # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz), 22050 Hz = 44100 Hz TE
+n_fft = 512                  # 23 ms * 22050 Hz ~ 512
 
-sample_rate = 22050                         # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz), 22050 Hz = 44100 Hz TE
-n_fft = 512                                 # 23 ms * 22050 Hz
-frame_rate = sample_rate / (n_fft // 4)	    # 22050 / 128 = 256
+# Smaller values improve the temporal resolution of the STFT at the expense of frequency resolution
+# Shape: (1+nfft/2, n_frames = len/(n_fft/4))
 
-patch_len = 43           		    # = 250ms ~ 25ms
-patch_skip = 25			            # = 150ms ~ 15ms
-seq_length = 30			    	    # = 500ms with ~ 5 calls
-seq_skip = 15
+# 1th order butterworth high-pass filter with cut-off frequency of 15,000 kHz
+b, a = signal.butter(10, 15000 / 120000, 'highpass')
 
-scale_factor = 1.0
+def denoise(x):
+  return np.abs(x - x.mean())
 
-def slideWindow(a, size, step):
-  b = []
-  i = 0
-  pos = 0
-  while pos + size < len(a):
-    pos = int(i * step)
-    b.append(a[pos : pos + size])
-    i+=1
-  return b
-
-def getSequences(spectrogram):
-  tiles = slideWindow(spectrogram, size=path_len, step=patch_skip)[:-1] # last one is not full
-  sequences = slideWindow(tiles, size=seq_len, step=seq_skip)[:-1] # last one is not full
-  return sequences
-
-def getIndividuals():
-  # return sequences
-  return
-
-
-for set in ["train", "test", "val"]:
-  merged_set = merged_hf.require_group(set)
-
-  seq_hf = h5py.File('sequences_s.h5', 'a')
-  #ind_hf = h5py.File('individuals_s.h5', 'a')
-
-  X_seq = []
-  Y_seq = []
-  #X_ind = []
-  #Y_ind = []
-  print("Preparing " + set + " dataset.")
-
-  for species in tqdm(list(labels)):
-    S_db = merged_set.get(species)
-    new_size = S_db.shape * scale_factor
-    S_db = cv2.resize(np.float32(S_db), dsize=new_size, interpolation=cv2.INTER_NEAREST)
-    label = to_categorical(labels[species], num_classes=len(labels)) # one hot encoding
-    seq = getSequences(S_db)
-    print(S_db.shape)
-    X_seq.extend(seq)
-    Y_seq.extend([label] * len(seq))
-
-    #ind = getIndividuals(S_db)
-    #X_ind.extend(ind)
-    #Y_ind.extend([label] * len(ind))
-
-  print("Sequences:", len(X_seq))
-  #print("Individuals:", len(X_ind))
-
-  print("Shuffling...")
-  X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
-
-  print("Writing...")
-  seq_hf.create_dataset('X_' + set, data=X_seq)
-  seq_hf.create_dataset('Y_' + set, data=Y_seq)
-  seq_hf.close()
-  del X_seq
-  del Y_seq
+def mergeClass(name):
+  signals = []
+  for filename in tqdm(classes[name]):
+    y, _ = librosa.load("../data/" + filename + '.wav', sr=sample_rate)
+    filtered = signal.lfilter(b, a, y)                      # filter
+    D = librosa.stft(filtered, n_fft=n_fft)
+    S_db = librosa.amplitude_to_db(np.abs(D), ref=np.max)   # spectrogram
+    S_db = np.apply_along_axis(denoise, axis=1, arr=S_db)   # denoise
+    signals.append(np.transpose(S_db))
   
-  #X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
-  #ind_hf.create_dataset('X_' + set, data=X_ind)
-  #ind_hf.create_dataset('Y_' + set, data=Y_ind)
-  #ind_hf.close()
+  if len(signals) >= 7:
+    X_train, X_test, _, _ = train_test_split(signals, np.zeros(len(signals)), test_size=0.25, random_state=42)
+    X_train, X_val, _, _ = train_test_split(X_train, np.zeros(len(X_train)), test_size=0.2, random_state=42)
+    train = np.concatenate(X_train)
+    test = np.concatenate(X_test)
+    val = np.concatenate(X_val)
+    train_set.create_dataset(name, data=train)
+    test_set.create_dataset(name, data=test)
+    val_set.create_dataset(name, data=val)
+
+for classname in list(classes):
+  if not classname in train_set or not classname in test_set or not classname in val_set:
+    mergeClass(classname)
+    print(classname + " prepared!")
+
+hf.close()
