@@ -84,46 +84,46 @@ def getIndividuals():
   return
 
 
-  for set in ["train", "test", "val"]:
-    merged_set = merged_hf.require_group(set)
+for set in ["train", "test", "val"]:
+  merged_set = merged_hf.require_group(set)
 
-    seq_hf = h5py.File('sequences_s.h5', 'a')
-    #ind_hf = h5py.File('individuals_s.h5', 'a')
+  seq_hf = h5py.File('sequences_s.h5', 'a')
+  #ind_hf = h5py.File('individuals_s.h5', 'a')
 
-    X_seq = []
-    Y_seq = []
-    #X_ind = []
-    #Y_ind = []
-    print("Preparing " + set + " dataset.")
+  X_seq = []
+  Y_seq = []
+  #X_ind = []
+  #Y_ind = []
+  print("Preparing " + set + " dataset.")
 
-    for species in tqdm(list(labels)):
-      S_db = merged_set.get(species)
-      new_size = S_db.shape * scale_factor
-      S_db = cv2.resize(np.float32(S_db), dsize=new_size, interpolation=cv2.INTER_NEAREST)
-      label = to_categorical(labels[species], num_classes=len(labels)) # one hot encoding
-      seq = getSequences(S_db)
-      print(S_db.shape)
-      X_seq.extend(seq)
-      Y_seq.extend([label] * len(seq))
+  for species in tqdm(list(labels)):
+    S_db = merged_set.get(species)
+    new_size = S_db.shape * scale_factor
+    S_db = cv2.resize(np.float32(S_db), dsize=new_size, interpolation=cv2.INTER_NEAREST)
+    label = to_categorical(labels[species], num_classes=len(labels)) # one hot encoding
+    seq = getSequences(S_db)
+    print(S_db.shape)
+    X_seq.extend(seq)
+    Y_seq.extend([label] * len(seq))
 
-      #ind = getIndividuals(S_db)
-      #X_ind.extend(ind)
-      #Y_ind.extend([label] * len(ind))
+    #ind = getIndividuals(S_db)
+    #X_ind.extend(ind)
+    #Y_ind.extend([label] * len(ind))
 
-    print("Sequences:", len(X_seq))
-    #print("Individuals:", len(X_ind))
+  print("Sequences:", len(X_seq))
+  #print("Individuals:", len(X_ind))
 
-    print("Shuffling...")
-    X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
+  print("Shuffling...")
+  X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
 
-    print("Writing...")
-    seq_hf.create_dataset('X_' + set, data=X_seq)
-    seq_hf.create_dataset('Y_' + set, data=Y_seq)
-    seq_hf.close()
-    del X_seq
-    del Y_seq
-    
-    #X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
-    #ind_hf.create_dataset('X_' + set, data=X_ind)
-    #ind_hf.create_dataset('Y_' + set, data=Y_ind)
-    #ind_hf.close()
+  print("Writing...")
+  seq_hf.create_dataset('X_' + set, data=X_seq)
+  seq_hf.create_dataset('Y_' + set, data=Y_seq)
+  seq_hf.close()
+  del X_seq
+  del Y_seq
+  
+  #X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
+  #ind_hf.create_dataset('X_' + set, data=X_ind)
+  #ind_hf.create_dataset('Y_' + set, data=Y_ind)
+  #ind_hf.close()
