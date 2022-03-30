@@ -1,3 +1,5 @@
 /results
 /data
 *.h5
+.ipynb_checkpoints
+.nfs*
