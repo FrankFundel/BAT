@@ -49,40 +49,41 @@ classes23 = {
   "Rhinolophus blasii": 23
 }
 
-def peak_detect(spectrogram):
-    env = np.mean(spectrogram, axis=1)
-    peaks = librosa.util.peak_pick(env, pre_max=3, post_max=5, pre_avg=3, post_avg=5, delta=0.6, wait=20)
-    return env, peaks
+def slideWindow(a, size, step):
+    b = []
+    i = 0
+    pos = 0
+    while pos + size < len(a):
+        pos = int(i * step)
+        b.append(a[pos : pos + size])
+        i+=1
+    return b
 
-def getIndividuals(spectrogram, patch_len):
-    individuals = []
-    _, peaks = peak_detect(spectrogram)
-    for p in peaks:
-        pos = p - int(patch_len / 2)
-        if (pos >= 0 and len(spectrogram) >= pos+patch_len):
-            individuals.append(spectrogram[pos:pos+patch_len])
-    return individuals
+def getSequences(spectrogram, patch_len, patch_skip, seq_len, seq_skip):
+    tiles = slideWindow(spectrogram, size=patch_len, step=patch_skip)[:-1] # last one is not full
+    sequences = slideWindow(tiles, size=seq_len, step=seq_skip)[:-1] # last one is not full
+    return sequences
 
-def prepareSet(prepared_set, labels, patch_len, scale_factor):
-    X_ind = []
-    Y_ind = []
-
+def prepareSet(prepared_set, labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor):
+    X_seq = []
+    Y_seq = []
+    
     for species in tqdm(list(labels)):
-        S_db = np.asarray(prepared_set.get(species))
+        S_db = prepared_set.get(species)
         new_size = (int(S_db.shape[1] * scale_factor), int(S_db.shape[0] * scale_factor))
-        S_db = cv2.resize(S_db, dsize=new_size, interpolation=cv2.INTER_NEAREST)
+        S_db = cv2.resize(np.float32(S_db), dsize=new_size, interpolation=cv2.INTER_NEAREST)
         label = to_categorical(labels[species], num_classes=len(labels)) # one hot encoding
 
-        ind = getIndividuals(S_db, patch_len)
-        X_ind.extend(ind)
-        Y_ind.extend([label] * len(ind))
+        seq = getSequences(S_db, patch_len, patch_skip, seq_len, seq_skip)
+        X_seq.extend(seq)
+        Y_seq.extend([label] * len(seq))
     
-    X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
-    return np.asarray(X_ind), np.asarray(Y_ind)
+    X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
+    return np.asarray(X_seq), np.asarray(Y_seq)
 
-def getIndividuals(file, labels, patch_len, scale_factor):
+def getSequences(file, labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor):
     prepared_hf = h5py.File(file, 'r')
-    X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, scale_factor)
-    X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, scale_factor)
-    X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, scale_factor)
+    X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor)
+    X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor)
+    X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor)
     return X_train, Y_train, X_test, Y_test, X_val, Y_val
