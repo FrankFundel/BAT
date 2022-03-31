@@ -7,9 +7,9 @@ BAT - Bio Acoustic Transformer
 Download the unprepared dataset from [Museum für Naturkunde Berlin, Reinald Skiba](www.tierstimmenarchiv.de/download/Chiroptera.zip) (sometimes not available)
 Unzip the file, move alle .WAV-files to a root folder called _data_. A .CSV file with additional data already exists called _data.csv_.
 
-- _datasets/merge.py_: FFT -> filter -> denoise -> train/test/val split -> merge recordings -> _merged.h5_
-- _datasets/sequence.py_: sequencing -> h5, to wave -> sequencing -> h5
-- _datasets/separate.py_: separate -> h5, to wave -> separating -> h5
+- _datasets/prepared.py_: FFT -> filter -> denoise -> train/test/val split -> merge recordings -> _prepared.h5_ (very slow, ~15GB)
+- _datasets/prepare_sequences.ipynb_: Interactive notebook for sequencing (fast, in memory)
+- _datasets/prepare_individuals.ipynb_: Interactive notebook for individuals (fast, in memory)
 
 # Metadata
 
