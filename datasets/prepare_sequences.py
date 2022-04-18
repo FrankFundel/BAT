@@ -64,7 +64,7 @@ def getSequences(spectrogram, patch_len, patch_skip, seq_len, seq_skip):
     sequences = slideWindow(tiles, size=seq_len, step=seq_skip)[:-1] # last one is not full
     return sequences
 
-def prepareSet(prepared_set, labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor):
+def prepareSet(prepared_set, labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor, one_hot):
     X_seq = []
     Y_seq = []
     
@@ -72,7 +72,7 @@ def prepareSet(prepared_set, labels, patch_len, patch_skip, seq_len, seq_skip, s
         S_db = prepared_set.get(species)
         new_size = (int(S_db.shape[1] * scale_factor), int(S_db.shape[0] * scale_factor))
         S_db = cv2.resize(np.float32(S_db), dsize=new_size, interpolation=cv2.INTER_NEAREST)
-        label = to_categorical(labels[species], num_classes=len(labels)) # one hot encoding
+        label = to_categorical(labels[species], num_classes=len(labels)) if one_hot else labels[species]
 
         seq = getSequences(S_db, patch_len, patch_skip, seq_len, seq_skip)
         X_seq.extend(seq)
@@ -81,9 +81,9 @@ def prepareSet(prepared_set, labels, patch_len, patch_skip, seq_len, seq_skip, s
     X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
     return np.asarray(X_seq), np.asarray(Y_seq)
 
-def getSequences(file, labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor):
+def prepare(file, labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor=1.0, one_hot=False):
     prepared_hf = h5py.File(file, 'r')
-    X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor)
-    X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor)
-    X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor)
+    X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor, one_hot)
+    X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor, one_hot)
+    X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, patch_skip, seq_len, seq_skip, scale_factor, one_hot)
     return X_train, Y_train, X_test, Y_test, X_val, Y_val
