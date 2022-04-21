@@ -23,32 +23,7 @@ classes13 = {
   "Myotis myotis": 12,
 }
 
-classes22 = {
-  "Pipistrellus pipistrellus": 0,
-  "Pipistrellus nathusii": 1,
-  "Pipistrellus kuhlii": 2,
-  "Myotis daubentonii": 3,
-  "Nyctalus noctula": 4,
-  "Nyctalus leisleri": 5,
-  "Myotis nattereri": 6,
-  "Eptesicus serotinus": 7,
-  "Myotis dasycneme": 8,
-  "Miniopterus schreibersii": 9,
-  "Vespertilio murinus": 10,
-  "Rhinolophus ferrumequinum": 11,
-  "Rhinolophus hipposideros": 12,
-  "Myotis brandtii": 13,
-  "Myotis mystacinus": 14,
-  "Myotis emarginatus": 15,
-  "Myotis myotis": 16,
-  "Eptesicus nilssonii": 17,
-  "Tadarida teniotis": 18,
-  "Myotis capaccinii": 19,
-  "Pipistrellus maderensis": 20,
-  "Rhinolophus blasii": 21
-}
-
-classes20 = {
+classes18 = {
   "Pipistrellus pipistrellus": 0,
   "Pipistrellus nathusii": 1,
   "Pipistrellus kuhlii": 2,
@@ -66,9 +41,7 @@ classes20 = {
   "Myotis emarginatus": 14,
   "Myotis myotis": 15,
   "Eptesicus nilssonii": 16,
-  "Myotis capaccinii": 17,
-  "Pipistrellus maderensis": 18,
-  "Rhinolophus blasii": 19
+  "Rhinolophus blasii": 17
 }
 
 def peak_detect(spectrogram, threshold):
