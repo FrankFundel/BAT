@@ -8,8 +8,11 @@ import h5py
 import sys
 
 
-sample_rate = 22050          # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz), 22050 Hz = 44100 Hz TE
-n_fft = 512                  # 23 ms * 22050 Hz ~ 512
+#sample_rate = 22050          # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz)
+#n_fft = 512                  # 23 ms * 22050 Hz ~ 512
+
+sample_rate = 44100
+n_fft = 512
 
 # Smaller values improve the temporal resolution of the STFT at the expense of frequency resolution
 # Shape: (1+nfft/2, n_frames = len/(n_fft/4))
@@ -46,7 +49,7 @@ def mergeClass(name):
 
 if "run" in sys.argv:
     df = pd.read_csv('../data.csv')
-    hf = h5py.File('prepared.h5', 'a')  # will be ~13GB
+    hf = h5py.File('prepared-44khz.h5', 'a')  # will be ~13GB
     train_set = hf.require_group("train")
     test_set = hf.require_group("test")
     val_set = hf.require_group("val")

@@ -94,6 +94,7 @@ def prepare(file, labels, patch_len, scale_factor=1.0, resize=None, one_hot=Fals
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         model = nn.DataParallel(model, device_ids=[0, 1])
     model.to(device)
+    model.eval()
 
     X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, scale_factor,
                                   resize, one_hot, threshold, ml, model, device)
