@@ -1,0 +1,7 @@
+opencv-python-headless
+flask
+flask_cors
+gunicorn
+librosa
+numpy
+torch
