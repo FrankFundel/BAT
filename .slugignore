@@ -1,0 +1,10 @@
+/results
+/data
+__pycache__
+wandb
+*.h5
+.ipynb_checkpoints
+.nfs*
+*.pt
+*.pth
+*.tasks
