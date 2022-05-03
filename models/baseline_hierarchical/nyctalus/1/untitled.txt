@@ -1,0 +1,17 @@
+use_stochdepth = False
+use_mixedprecision = False
+use_imbalancedsampler = False
+use_sampler = True
+use_cosinescheduler = False
+use_reduceonplateu = False
+use_nadam = False
+use_mixup = False
+
+batch_size = 64
+epochs = 20
+lr = 0.01
+warmup_epochs = 5
+wd = 0.01
+
+Test accuracy: 0.8263479836882646
+F1-score: 0.8261809324047774

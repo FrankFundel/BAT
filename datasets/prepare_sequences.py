@@ -6,41 +6,32 @@ from keras.utils.np_utils import to_categorical
 from sklearn.utils import shuffle
 import cv2
 
-classes13 = {
-  "Pipistrellus pipistrellus": 0,
-  "Pipistrellus nathusii": 1,
-  "Pipistrellus kuhlii": 2,
-  "Myotis daubentonii": 3,
-  "Nyctalus noctula": 4,
-  "Nyctalus leisleri": 5,
-  "Eptesicus serotinus": 6,
-  "Myotis dasycneme": 7,
-  "Miniopterus schreibersii": 8,
-  "Vespertilio murinus": 9,
-  "Rhinolophus ferrumequinum": 10,
-  "Myotis emarginatus": 11,
-  "Myotis myotis": 12,
-}
 
-classes18 = {
-  "Pipistrellus pipistrellus": 0,
-  "Pipistrellus nathusii": 1,
-  "Pipistrellus kuhlii": 2,
-  "Myotis daubentonii": 3,
-  "Nyctalus noctula": 4,
-  "Nyctalus leisleri": 5,
-  "Myotis nattereri": 6,
-  "Eptesicus serotinus": 7,
-  "Myotis dasycneme": 8,
-  "Miniopterus schreibersii": 9,
-  "Vespertilio murinus": 10,
-  "Rhinolophus ferrumequinum": 11,
-  "Myotis brandtii": 12,
-  "Myotis mystacinus": 13,
-  "Myotis emarginatus": 14,
-  "Myotis myotis": 15,
-  "Eptesicus nilssonii": 16,
-  "Rhinolophus blasii": 17
+germanBats = {
+    "Rhinolophus ferrumequinum": 0,
+    "Rhinolophus hipposideros": 1,
+    "Myotis daubentonii": 2,
+    "Myotis brandtii": 3,
+    "Myotis mystacinus": 4,
+    "Myotis emarginatus": 5,
+    "Myotis nattereri": 6,
+    #"Myotis bechsteinii": 7,
+    "Myotis myotis": 7,
+    "Myotis dasycneme": 8,
+    "Nyctalus noctula": 9,
+    "Nyctalus leisleri": 10,
+    "Pipistrellus pipistrellus": 11,
+    "Pipistrellus nathusii": 12,
+    "Pipistrellus kuhlii": 13,
+    "Eptesicus serotinus": 14,
+    "Eptesicus nilssonii": 15,
+    #"Plecotus auritus": 16,
+    #"Plecotus austriacus": 16,
+    #"Barbastella barbastellus": 16,
+    #"Tadarida teniotis": 16,
+    "Miniopterus schreibersii": 16,
+    #"Hypsugo savii": 18,
+    "Vespertilio murinus": 17,
 }
 
 def slideWindow(a, size, step, resize):
@@ -76,8 +67,13 @@ def prepareSet(prepared_set, labels, patch_len, patch_skip, seq_len, seq_skip, r
     X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
     return np.asarray(X_seq), np.asarray(Y_seq)
 
-def prepare(file, labels, patch_len, patch_skip, seq_len, seq_skip, resize=None, one_hot=False):
+def prepare(file, labels, patch_len, patch_skip, seq_len, seq_skip, resize=None, one_hot=False, only_test=False):
     prepared_hf = h5py.File(file, 'r')
+    if only_test:
+        X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, seq_len, seq_skip,
+                                resize, one_hot)
+        return X_test, Y_test
+    
     X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, patch_skip, seq_len, seq_skip,
                                   resize, one_hot)
     X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, seq_len, seq_skip,

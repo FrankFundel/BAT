@@ -6,13 +6,19 @@ from scipy import signal
 from tqdm import tqdm
 import h5py
 import sys
+import argparse
 
+parser = argparse.ArgumentParser(description='Preparing data.')
 
-#sample_rate = 22050          # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz)
-#n_fft = 512                  # 23 ms * 22050 Hz ~ 512
+parser.add_argument('--run', help='Use this flag to run the prepare loop.', action="store_true")
+parser.add_argument('--sample_rate', type=int, help='Desired sample rate.', default=22050)
+parser.add_argument('--n_fft', type=int, help='Desired number of fft.', default=512)
+parser.add_argument('--filename', help='Desired filename to write to.', default="prepared.h5py")
 
-sample_rate = 44100
-n_fft = 512
+args, unknown = parser.parse_known_args()
+
+sample_rate = args.sample_rate      # recordings are in 96 kHz, 24 bit depth, 1:10 TE (mic sr 960 kHz)
+n_fft = args.n_fft                  # 23 ms * 22050 Hz ~ 512
 
 # Smaller values improve the temporal resolution of the STFT at the expense of frequency resolution
 # Shape: (1+nfft/2, n_frames = len/(n_fft/4))
@@ -47,9 +53,9 @@ def mergeClass(name):
         test_set.create_dataset(name, data=test)
         val_set.create_dataset(name, data=val)
 
-if "run" in sys.argv:
+if args.run:
     df = pd.read_csv('../data.csv')
-    hf = h5py.File('prepared-44khz.h5', 'a')  # will be ~13GB
+    hf = h5py.File(args.filename, 'a')  # will be ~13GB
     train_set = hf.require_group("train")
     test_set = hf.require_group("test")
     val_set = hf.require_group("val")

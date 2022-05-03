@@ -12,7 +12,7 @@ Unzip the file, move alle .WAV-files to a root folder called _data_. A .CSV file
 - _datasets/prepare_sequences.ipynb_: Interactive notebook for extracting sequences.
 - _datasets/prepare_individuals.py_: Script for extracting individuals.
 - _datasets/prepare_sequences.py_: Script for extracting sequences.
-- _datasets/call_nocall.ipynb_: Interactive notebook for annotating individuals into call/no-call -> [_call_nocall.annotation_](https://drive.google.com/file/d/1d1UiT5C74P-aEfWbixrsOeYpEQODJaWq/view?usp=sharing) (can be downloaded, ~180MB)
+- _datasets/call_nocall.ipynb_: Interactive notebook for annotating individuals into call/no-call -> _call_nocall.annotation_
 
 
 # Metadata

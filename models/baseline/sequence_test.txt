@@ -1,0 +1,9 @@
+Taking sequences
+Run each sequence through call/no-call
+Extract only calls -> smaller sequence
+Run each call through baseline
+Take most occuring prediction as sequence prediction
+
+
+Test accuracy: 0.7229894394800975
+F1-score: 0.6598738471618424
