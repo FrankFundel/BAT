@@ -84,7 +84,7 @@ def prepareSet(prepared_set, labels, patch_len, mode, scale_factor, resize, one_
         X_ind.extend(ind)
         Y_ind.extend([label] * len(ind))
     
-    if not slide:
+    if not mode == 'slide':
         X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
     return np.asarray(X_ind), np.asarray(Y_ind)
 
