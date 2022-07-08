@@ -86,11 +86,14 @@ def prepareSet(prepared_set, labels, patch_len, patch_skip, options, mode, resiz
     X_seq, Y_seq = shuffle(X_seq, Y_seq, random_state=42)
     return np.asarray(X_seq), np.asarray(Y_seq)
 
-def prepare(file, labels, patch_len, patch_skip, options, mode='slide', resize=None, one_hot=False, only_test=False):
+def prepare(file, labels, patch_len, patch_skip, options, mode='slide', resize=None, one_hot=False, only_test=False, only_val=False):
     prepared_hf = h5py.File(file, 'r')
     if only_test:
         X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, options, mode, resize, one_hot)
         return X_test, Y_test
+    if only_val:
+        X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, patch_skip, options, mode, resize, one_hot)
+        return X_val, Y_val
     
     X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, patch_skip, options, mode, resize, one_hot)
     X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, options, mode, resize, one_hot)

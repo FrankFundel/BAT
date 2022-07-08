@@ -53,16 +53,19 @@ def peak_detect(spectrogram, threshold):
     peaks = librosa.util.peak_pick(env, pre_max=3, post_max=5, pre_avg=3, post_avg=5, delta=0.6, wait=20)
     return env, peaks
 
-def getIndividuals(spectrogram, patch_len, mode, resize, threshold):
+def getIndividuals(spectrogram, patch_len, patch_skip, mode, resize, threshold):
     if mode == 'slide':
-        individuals = slideWindow(spectrogram, patch_len, int(patch_len/2), resize)[:-1] # last one is not full
-        return individuals
+        if len(spectrogram.shape) > 0:
+            individuals = slideWindow(spectrogram, patch_len, patch_skip, resize)[:-1] # last one is not full
+            return individuals
+        else:
+            return []
     
     elif mode == 'peak_detect':
         individuals = []
         _, peaks = peak_detect(spectrogram, threshold)
         for p in peaks:
-            pos = p - int(patch_len / 2)
+            pos = p - patch_skip
             if (pos >= 0 and len(spectrogram) >= pos+patch_len):
                 ind = spectrogram[pos:pos+patch_len]
                 if resize is not None:
@@ -70,17 +73,15 @@ def getIndividuals(spectrogram, patch_len, mode, resize, threshold):
                 individuals.append(ind)
         return individuals
 
-def prepareSet(prepared_set, labels, patch_len, mode, scale_factor, resize, one_hot, threshold):
+def prepareSet(prepared_set, labels, patch_len, patch_skip, mode, resize, one_hot, threshold):
     X_ind = []
     Y_ind = []
 
     for species in tqdm(list(labels)):
         S_db = np.asarray(prepared_set.get(species))
-        new_size = (int(S_db.shape[1] * scale_factor), int(S_db.shape[0] * scale_factor))
-        S_db = cv2.resize(S_db, dsize=new_size, interpolation=cv2.INTER_NEAREST)
         label = to_categorical(labels[species], num_classes=len(labels)) if one_hot else labels[species]
 
-        ind = getIndividuals(S_db, patch_len, mode, resize, threshold)
+        ind = getIndividuals(S_db, patch_len, patch_skip, mode, resize, threshold)
         X_ind.extend(ind)
         Y_ind.extend([label] * len(ind))
     
@@ -88,13 +89,19 @@ def prepareSet(prepared_set, labels, patch_len, mode, scale_factor, resize, one_
         X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
     return np.asarray(X_ind), np.asarray(Y_ind)
 
-def prepare(file, labels, patch_len, mode='peak_detect', scale_factor=1.0, resize=None, one_hot=False, threshold=0):
+def prepare(file, labels, patch_len, patch_skip, mode='peak_detect', resize=None, only_test=False, only_val=False, one_hot=False, threshold=0):
     prepared_hf = h5py.File(file, 'r')
+    if only_test:
+        X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, mode, resize, one_hot, threshold)
+        return X_test, Y_test
+    if only_val:
+        X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, patch_skip, mode, resize, one_hot, threshold)
+        return X_val, Y_val
 
-    X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, mode, scale_factor,
+    X_train, Y_train = prepareSet(prepared_hf.require_group("train"), labels, patch_len, patch_skip, mode,
                                   resize, one_hot, threshold)
-    X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, mode, scale_factor,
+    X_test, Y_test = prepareSet(prepared_hf.require_group("test"), labels, patch_len, patch_skip, mode,
                                 resize, one_hot, threshold)
-    X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, mode, scale_factor,
+    X_val, Y_val = prepareSet(prepared_hf.require_group("val"), labels, patch_len, patch_skip, mode,
                               resize, one_hot, threshold)
     return X_train, Y_train, X_test, Y_test, X_val, Y_val

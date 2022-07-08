@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description='Preparing data.')
 parser.add_argument('--run', help='Use this flag to run the prepare loop.', action="store_true")
 parser.add_argument('--sample_rate', type=int, help='Desired sample rate.', default=22050)
 parser.add_argument('--n_fft', type=int, help='Desired number of fft.', default=512)
-parser.add_argument('--filename', help='Desired filename to write to.', default="prepared.h5")
+parser.add_argument('--filename', help='Desired filename to write to.', default="prepared_signal.h5")
 
 args, unknown = parser.parse_known_args()
 
@@ -26,22 +26,16 @@ n_fft = args.n_fft                  # 23 ms * 22050 Hz ~ 512
 # 1th order butterworth high-pass filter with cut-off frequency of 15,000 kHz
 b, a = signal.butter(10, 15000 / 120000, 'highpass')
 
-def denoise(x):
-    return np.abs(x - x.mean())
-
 def prepareData(y):
     filtered = signal.lfilter(b, a, y)                      # filter
-    D = librosa.stft(filtered, n_fft=n_fft)
-    S_db = librosa.amplitude_to_db(np.abs(D), ref=np.max)   # spectrogram
-    S_db = np.apply_along_axis(denoise, axis=1, arr=S_db)   # denoise
-    return np.transpose(S_db)
+    return filtered
 
 def mergeClass(name):
     signals = []
     for filename in tqdm(classes[name]):
         y, _ = librosa.load("../data/" + filename + '.wav', sr=sample_rate)
-        S_db = prepareData(y)
-        signals.append(S_db)
+        sig = prepareData(y)
+        signals.append(sig)
         
     if len(signals) >= 7:
         X_train, X_test, _, _ = train_test_split(signals, np.zeros(len(signals)), test_size=0.25, random_state=42)
