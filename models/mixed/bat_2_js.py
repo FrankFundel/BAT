@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
-import torchvision
+# import einops
 
-import einops
-from einops import rearrange, repeat
-from einops.layers.torch import Rearrange
-
+'''
+Adapted from https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py
+'''
 class PreNorm(nn.Module):
     def __init__(self, dim, fn):
         super().__init__()
@@ -30,7 +29,7 @@ class FeedForward(nn.Module):
 class Attention(nn.Module):
     def __init__(self, dim, heads = 8, dim_head = 64, dropout = 0.):
         super().__init__()
-        inner_dim = dim_head *  heads
+        inner_dim = dim_head * heads
         project_out = not (heads == 1 and dim_head == dim)
 
         self.heads = heads
@@ -48,7 +47,11 @@ class Attention(nn.Module):
 
     def forward(self, x):
         qkv = self.to_qkv(x).chunk(3, dim = -1)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
+        # q, k, v = map(lambda t: einops.rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
+        b, n, z = qkv[0].shape
+        h = self.heads
+        d = int(z / self.heads)
+        q, k, v = map(lambda t: t.reshape((b, n, h, d)).permute((0, 2, 1, 3)), qkv)
 
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
@@ -56,7 +59,8 @@ class Attention(nn.Module):
         attn = self.dropout(attn)
 
         out = torch.matmul(attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
+        # out = einops.rearrange(out, 'b h n d -> b n (h d)')
+        out = out.permute((0, 2, 1, 3)).flatten(2, 3)
         return self.to_out(out)
 
 class Transformer(nn.Module):
@@ -75,22 +79,20 @@ class Transformer(nn.Module):
         return x
 
 
-class Net(nn.Module):
+class BAT(nn.Module):
     """
-    Classifier based on a pytorch TransformerEncoder.
+    Model based on PyTorch TransformerEncoder.
     """
 
     def __init__(
         self,
         max_len,
-        patch_dim,
-        d_model,
+        d_model, # must equal to patch_embedding output dim
         num_classes,
-        nhead=8,
-        dim_feedforward=2048,
-        num_layers=6,
+        nhead=2,
+        dim_feedforward=32,
+        num_layers=2,
         dropout=0.1,
-        classifier_dropout=0.1,
     ):
 
         super().__init__()
@@ -137,7 +139,8 @@ class Net(nn.Module):
         x = self.to_patch_embedding(x)
         x = x.reshape((b, n, self.d_model))
         
-        cls = einops.repeat(self.cls_token, '1 n d -> b n d', b=x.shape[0])
+        #cls = einops.repeat(self.cls_token, '1 n d -> b n d', b=b)
+        cls = self.cls_token.repeat((b, 1, 1))
         x = torch.cat((cls, x), dim=1)
         x += self.pos_encoder
         

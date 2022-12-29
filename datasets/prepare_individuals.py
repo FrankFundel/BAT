@@ -85,8 +85,7 @@ def prepareSet(prepared_set, labels, patch_len, patch_skip, mode, resize, one_ho
         X_ind.extend(ind)
         Y_ind.extend([label] * len(ind))
     
-    if not mode == 'slide':
-        X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
+    X_ind, Y_ind = shuffle(X_ind, Y_ind, random_state=42)
     return np.asarray(X_ind), np.asarray(Y_ind)
 
 def prepare(file, labels, patch_len, patch_skip, mode='peak_detect', resize=None, only_test=False, only_val=False, one_hot=False, threshold=0):
